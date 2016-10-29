@@ -1,0 +1,6 @@
+*.pyc
+.ropeproject/*
+.cache/*
+arc/*
+__pycache__/*
+data/*
