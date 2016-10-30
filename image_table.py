@@ -1,35 +1,60 @@
 import os
+"""
+This goes through all the lists of ponys in the wiki lists, and for each pony that has a picture,
+it downloads it (if we don't already have it).
+
+Then it constructs an HTML page that showcases a table of all the pics with their names as
+labels.
+"""
+
+IMG_DIR = 'data/img/'
 
 BEGIN_HTML = """
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
-    <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/thumbnail-gallery.css" rel="stylesheet">
     <title>Look at the ponies!</title>
 </head>
 <body>
+<div class="container">
+    <div class="row">
+        <div class="col-lg-12">
+            <h1 class="page-header">Look at all the poniez!!</h1>
+        </div>
 """
 
 END_HTML = """
+    </div>
+</div>
+<footer>
+    <div class="row">
+        <div class="col-lg-12">
+            <p>You sure you looked at every one?!  Look again...</p>
+        </div>
+    </div>
+</footer>
+<script src="js/jquery.js"></script>
+<script src="js/bootstrap.min.js"></script>
 </body>
 </html>
 """
 
 
-def get_img_list(DIR, ext='.png'):
+def get_img_list(_dir, ext='.png'):
     images = []
 
-    for file in os.listdir('.' + DIR):
+    for file in os.listdir(_dir):
         if file.endswith(ext):
             images.append(file)
     return images
 
 
-def mk_img_sheet(DIR, cols=5):
-    images = iter(get_img_list(DIR))
-    filename = 'imgsheet.html'
+def mk_img_sheet(_dir, cols=5):
+    images = iter(get_img_list(_dir))
+    filename = './imgsheet.html'
     width, height = 150, 150
 
     with open(filename, 'w') as f:
@@ -42,10 +67,12 @@ def mk_img_sheet(DIR, cols=5):
                 f.write('<tr>\n')
 
             f.write('<td>')
-            imglink = os.curdir + DIR + img
+            imglink = _dir + img
             imgname = os.path.basename(img)[:-4]
-            f.write('\n<p>{}</p>'.format(imgname))
+            f.write('<div class="thumbnail">')
             f.write('<img src="{}" width="{}px" height="{}px">'.format(imglink, width, height))
+            f.write('<b>{}</b>'.format(imgname))
+            f.write('</div>')
             f.write('</td>')
 
             if col == cols - 1:
@@ -62,5 +89,4 @@ def mk_img_sheet(DIR, cols=5):
 
 
 if __name__ == "__main__":
-    DIR = '/data/img/'
-    mk_img_sheet(DIR)
+    mk_img_sheet(IMG_DIR)
