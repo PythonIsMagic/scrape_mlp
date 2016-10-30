@@ -155,6 +155,9 @@ def html_to_text(url):
 
 
 def table_to_list(t):
+    """
+    Extracts all the rows in a table, excluding the headers.
+    """
     rows = t.findAll("tr")
     list_of_rows = []
 
