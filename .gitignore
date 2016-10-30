@@ -4,3 +4,5 @@
 arc/*
 __pycache__/*
 data/*
+pages/*
+*.html
