@@ -8,9 +8,9 @@
     Table format:
         Episode | Song | Lead | Begins at | Length | Album | Lyrics
 """
-import scrapekit
+import argparse
 import mlp_song
-import sys
+import scrapekit
 
 URL = 'http://mlp.wikia.com/wiki/Songs'
 PREFIX = 'http://mlp.wikia.com'
@@ -87,30 +87,20 @@ def scrape_all_songs():
     return songlinks
 
 if __name__ == "__main__":
-    download = False
-    usage = """
-Usage: {} [-d]'.format(sys.argv[0])
-    -d downloads all lyrics to text files.
-    No arguments - display all song links.
-    """
-
-    if len(sys.argv) == 2:
-        if sys.argv[1] == '-d':
-            download = True
-        elif sys.argv[1] in ['?', '--h', '-h']:
-            print(usage)
-            exit()
-    elif len(sys.argv) > 2:
-        print(usage)
-        exit()
+    parser = argparse.ArgumentParser(description="Get all links for My Little Pony songs from mlp.wikia.com.")
+    parser.add_argument('-q', '--quiet', action="store_true", help="Don't display text while processing.")
+    parser.add_argument('-d', '--download', action="store_true", help="Download all songs to text files.")
+    args = parser.parse_args()
 
     songlinks = scrape_all_songs()
 
     for link in songlinks:
-        print(link)
-        if download:
+        if not args.quiet:
+            print(link)
+        if args.download:
             # The link doesn't include the base URL, need to add that prefix.
-            print('Scraping {}...'.format(link))
+            if not args.quiet:
+                print('Scraping {}...'.format(link))
 
             text = mlp_song.get_lyrics(link)
             filename = SONG_DIR + link.split('/')[-1]

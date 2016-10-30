@@ -1,7 +1,7 @@
+import argparse
 import re
 import scrapekit
 import mlp_transcript
-import sys
 import time
 
 """
@@ -32,30 +32,20 @@ def find_links_by_regex(soup):
     return links
 
 if __name__ == "__main__":
-    download = False
-    usage = """
-Usage: {} [-d]'.format(sys.argv[0])
-    -d downloads all transcripts to text files.
-    No arguments - display all transcript links
-    """
-
-    if len(sys.argv) == 2:
-        if sys.argv[1] == '-d':
-            download = True
-        elif sys.argv[1] in ['?', '--h', '-h']:
-            print(usage)
-            exit()
-    elif len(sys.argv) > 2:
-        print(usage)
-        exit()
+    parser = argparse.ArgumentParser(description="Get all links for My Little Pony transcripts from mlp.wikia.com.")
+    parser.add_argument('-q', '--quiet', action="store_true", help="Don't display text while processing.")
+    parser.add_argument('-d', '--download', action="store_true", help="Download all transcripts to text files.")
+    args = parser.parse_args()
 
     soup = scrapekit.get_soup(URL)
     transcript_links = find_links_by_regex(soup)
 
     for t in transcript_links:
         link = t.attrs.get('href', '')
-        print(link)
 
-        if download:
+        if not args.quiet:
+            print(link)
+
+        if args.download:
             time.sleep(2)
             mlp_transcript.get_transcript(PREFIX + link)
