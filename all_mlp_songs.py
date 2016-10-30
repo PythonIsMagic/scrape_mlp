@@ -11,7 +11,6 @@
 import scrapekit
 import mlp_song
 import sys
-import time
 
 URL = 'http://mlp.wikia.com/wiki/Songs'
 PREFIX = 'http://mlp.wikia.com'
@@ -55,9 +54,7 @@ def scrape_table_col(table, field_index):
 
         rowspan = columns[0].attrs.get('rowspan', 0)
 
-        #  if columns[0].has_key('rowspan'):
         if rowspan:
-            #  print('Rowspan found! {}'.format(rowspan))
             countdown = int(rowspan) - 1
             tempcol = columns[0]
         elif countdown:
@@ -69,7 +66,7 @@ def scrape_table_col(table, field_index):
     return songlinks
 
 
-if __name__ == "__main__":
+def scrape_all_songs():
     print('Scraping all songs from {}'.format(URL))
     soup = scrapekit.get_soup(URL)
     song_elements = []
@@ -87,17 +84,35 @@ if __name__ == "__main__":
         link = element.find('a')
         if link:
             songlinks.append(PREFIX + link.attrs.get('href', ''))
-            print(songlinks[-1])
+    return songlinks
 
-    if len(sys.argv) > 1:
-        if sys.argv[1] == 'download':
-            for link in songlinks:
-                # The link doesn't include the base URL, need to add that prefix.
-                print('Scraping {}...'.format(link))
+if __name__ == "__main__":
+    download = False
+    usage = """
+Usage: {} [-d]'.format(sys.argv[0])
+    -d downloads all lyrics to text files.
+    No arguments - display all song links.
+    """
 
-                text = mlp_song.get_lyrics(link)
-                filename = SONG_DIR + link.split('/')[-1]
+    if len(sys.argv) == 2:
+        if sys.argv[1] == '-d':
+            download = True
+        elif sys.argv[1] in ['?', '--h', '-h']:
+            print(usage)
+            exit()
+    elif len(sys.argv) > 2:
+        print(usage)
+        exit()
 
-                scrapekit.write_to_file(filename, text)
+    songlinks = scrape_all_songs()
 
-                time.sleep(2)
+    for link in songlinks:
+        print(link)
+        if download:
+            # The link doesn't include the base URL, need to add that prefix.
+            print('Scraping {}...'.format(link))
+
+            text = mlp_song.get_lyrics(link)
+            filename = SONG_DIR + link.split('/')[-1]
+
+            scrapekit.write_to_file(filename, text)

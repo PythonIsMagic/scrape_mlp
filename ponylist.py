@@ -18,19 +18,34 @@ With columns:
     Description and appearance
     Image
 """
+IMG_DIR = './data/img/'
+
+USAGE = """
+Usage: python ponylist.py <url of pony list>
+    ie: python ponylist.py http://mlp.wikia.com/wiki/List_of_ponies/Unicorn_ponies
+
+Scrape all lists at once:
+    $ python ponylist.py all
+
+To scrape all lists into a csv file:
+    $ python ponylist.py csv
+
+To scrape all pony images in the lists:
+    $ python ponylist.py imb
+"""
 
 # URLSLists of all relevant and official characters in the MLP universe.
 URLS = [
     'http://mlp.wikia.com/wiki/List_of_ponies/Unicorn_ponies',
-    #  'http://mlp.wikia.com/wiki/List_of_ponies/Pegasus_ponies',
-    #  'http://mlp.wikia.com/wiki/List_of_ponies/Earth_ponies',
-    #  'http://mlp.wikia.com/wiki/List_of_ponies/Unicorn_ponies',
-    #  'http://mlp.wikia.com/wiki/List_of_ponies/Crystal_Ponies',
-    #  'http://mlp.wikia.com/wiki/List_of_ponies/Elders',
-    #  'http://mlp.wikia.com/wiki/List_of_ponies/Foals',
-    #  'http://mlp.wikia.com/wiki/List_of_ponies/Mentioned_ponies',
-    #  'http://mlp.wikia.com/wiki/List_of_comic_ponies',
-    #  'http://mlp.wikia.com/wiki/List_of_Wonderbolts'
+    'http://mlp.wikia.com/wiki/List_of_ponies/Pegasus_ponies',
+    'http://mlp.wikia.com/wiki/List_of_ponies/Earth_ponies',
+    'http://mlp.wikia.com/wiki/List_of_ponies/Unicorn_ponies',
+    'http://mlp.wikia.com/wiki/List_of_ponies/Crystal_Ponies',
+    'http://mlp.wikia.com/wiki/List_of_ponies/Elders',
+    'http://mlp.wikia.com/wiki/List_of_ponies/Foals',
+    'http://mlp.wikia.com/wiki/List_of_ponies/Mentioned_ponies',
+    'http://mlp.wikia.com/wiki/List_of_comic_ponies',
+    'http://mlp.wikia.com/wiki/List_of_Wonderbolts'
 ]
 
 
@@ -116,38 +131,32 @@ def get_csv():
 
 
 def get_images():
-    imagelinks = []
+    scrapekit.ensure_dir(IMG_DIR)
 
+    imagelinks = []
     for url in URLS:
-        soup = scrapekit.get_soup(url)
+        soup = scrapekit.handle_url(url)
         table = soup.find('table', {'class': 'listofponies'})
-        #  tbody = table.find('tbody')
         rows = table.findAll('tr')
 
         # Skip first row
         for row in rows[1:]:
             cols = row.findAll('td')
             if cols:
-                name = cols[0].text.strip()
-                #  print(name)
+                name = cols[0].text.encode('utf-8').strip()
+                # We'll ignore unknown ponies:
+                if 'Unnamed' in name:
+                    continue
                 img = cols[-1].find('a').attrs.get('href', 'None')
-                #  print(img)
 
-                local_img_src = scrapekit.save_image(name, img)
+                scrapekit.save_image(name, img)
 
     return imagelinks
 
+
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print('Usage: python ponylist.py <url of pony list>')
-        print('ie: python ponylist.py http://mlp.wikia.com/wiki/List_of_ponies/Unicorn_ponies')
-        print('To scrape all lists at once:')
-        print('$ python ponylist.py all')
-        print('To scrape all lists into a csv file:')
-        print('$ python ponylist.py csv')
-        print('To scrape all pony images in the lists:')
-        print('$ python ponylist.py imb')
-
+        print(USAGE)
     elif sys.argv[1] == 'all':
         scrape_all()
     elif sys.argv[1] == 'csv':

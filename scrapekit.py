@@ -140,6 +140,9 @@ def ensure_dir(_dir):
 
 
 def write_to_file(filename, text):
+    # Ensure the dir exists.
+    ensure_dir(os.path.dirname(filename))
+
     # Winter Wrap Up had an encoding error, so we'll use .encode('utf8')
     with open(filename, 'w') as f:
         f.write(text.encode('utf-8'))
@@ -177,18 +180,28 @@ def write_rows_to_csv(list_of_rows, filename):
 def save_image(name, source):
     FORMAT = '.png'
     # Image.save should determine the type from the extention
+
     IMGDIR = DATADIR + 'img/'
-    ensure_dir(IMGDIR)
-
-    print('Retrieving picture for {}'.format(name))
-
-    r = requests.get(source)
-    i = Image.open(StringIO(r.content))
+    # Clean name of '/'
+    name = name.replace('/', 'or')
     filename = IMGDIR + '_'.join(name.lower().split()) + FORMAT
 
-    # Need to ensure the directory is made??
-    with open(filename, 'w') as f:
-        i.save(filename)
+    # Check if we have this img
+    if os.path.exists(filename):
+        print('Already have pic for {}!'.format(name))
+        pass
+    else:
+        print('Retrieving picture for {}'.format(name))
+        time.sleep(2)
+        r = requests.get(source)
+        i = Image.open(StringIO(r.content))
+
+        #  with open(filename, 'w') as f:
+        try:
+            i.save(filename)
+        except:
+            print('{} save failed!'.format(filename))
+            exit()
 
     return filename
 

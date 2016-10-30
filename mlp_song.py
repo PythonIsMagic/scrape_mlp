@@ -3,7 +3,6 @@ import sys
 import scrapekit
 
 
-
 def scrape_id_to_div(soup, id):
     lyrics = soup.find(id='Lyrics')
 
@@ -54,7 +53,7 @@ def get_infobox_info(soup):
 
 
 def scrape_song_url(url):
-    soup = scrapekit.get_soup(url)
+    soup = scrapekit.handle_url(url)
 
     contents = scrape_id_to_div(soup, 'Lyrics')
     if not contents:
@@ -75,17 +74,12 @@ def scrape_song_url(url):
 
     # Get song title, fix blank spaces for file name
     songtitle = soup.title.text.split('|')[0]
-    #  filename = songtitle.replace(' ', '_') + '.txt'
 
     text = ''
     text += 'Song: {}\n'.format(songtitle)
     text += get_infobox_info(soup)
     text += '\n\n'
     text += filetext
-
-    # This duplicates lines!?!?
-    #  for line in contents:
-        #  print(line.text)
 
     return text
 

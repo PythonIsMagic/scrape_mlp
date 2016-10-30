@@ -32,6 +32,23 @@ def find_links_by_regex(soup):
     return links
 
 if __name__ == "__main__":
+    download = False
+    usage = """
+Usage: {} [-d]'.format(sys.argv[0])
+    -d downloads all transcripts to text files.
+    No arguments - display all transcript links
+    """
+
+    if len(sys.argv) == 2:
+        if sys.argv[1] == '-d':
+            download = True
+        elif sys.argv[1] in ['?', '--h', '-h']:
+            print(usage)
+            exit()
+    elif len(sys.argv) > 2:
+        print(usage)
+        exit()
+
     soup = scrapekit.get_soup(URL)
     transcript_links = find_links_by_regex(soup)
 
@@ -39,6 +56,6 @@ if __name__ == "__main__":
         link = t.attrs.get('href', '')
         print(link)
 
-        if 'download' in sys.argv:
+        if download:
             time.sleep(2)
             mlp_transcript.get_transcript(PREFIX + link)
