@@ -74,33 +74,26 @@ def scrape_all_names():
         print(n)
 
 
-def get_rows(url):
-    rows = []
-    soup = scrapekit.handle_url(url)
-    table = soup.find('table', {'class': 'listofponies'})
-    rows.extend(scrapekit.table_to_list(table))
-    return rows
-
-
-def get_images(url):
+def get_images(category_urls):
     scrapekit.ensure_dir(IMG_DIR)
 
     imagelinks = []
-    soup = scrapekit.handle_url(url)
-    table = soup.find('table', {'class': 'listofponies'})
-    rows = table.findAll('tr')
+    for url in category_urls:
+        soup = scrapekit.handle_url(url)
+        table = soup.find('table', {'class': 'listofponies'})
+        rows = table.findAll('tr')
 
-    # Skip first row
-    for row in rows[1:]:
-        cols = row.findAll('td')
-        if cols:
-            name = cols[0].text.encode('utf-8').strip()
-            # We'll ignore unknown ponies:
-            if 'Unnamed' in name:
-                continue
-            img = cols[-1].find('a').attrs.get('href', 'None')
+        # Skip first row
+        for row in rows[1:]:
+            cols = row.findAll('td')
+            if cols:
+                name = cols[0].text.encode('utf-8').strip()
+                # We'll ignore unknown ponies:
+                if 'Unnamed' in name:
+                    continue
+                img = cols[-1].find('a').attrs.get('href', 'None')
 
-            scrapekit.save_image(name, img)
+                scrapekit.save_image(name, img)
 
     return imagelinks
 
@@ -127,19 +120,14 @@ def clean_name(name):
     return n.strip()   # Strip any spaces
 
 
-def scrape_everything():
-    print('Are you sure you want to scrape ALL types? (Might take a while!)')
-    choice = raw_input('[y/n] :> ')
-
-    if choice.lower().startswith('y'):
-        rows = []
-        for url in URLS.values():
-            if args.verbose:
-                print('Scraping {}'.format(url))
-            rows.extend(get_rows(url))
-        return rows
-    else:
-        exit()
+def get_rows(urls):
+    rows = []
+    for url in urls:
+        print('Scraping {}'.format(url))
+        soup = scrapekit.handle_url(url)
+        table = soup.find('table', {'class': 'listofponies'})
+        rows.extend(scrapekit.table_to_list(table))
+    return rows
 
 
 def display_rows(rows):
@@ -148,10 +136,44 @@ def display_rows(rows):
         pprint(r)
 
 
-if __name__ == "__main__":
-    type_choices = URLS.keys()
-    type_choices.append('all')
+def process_rows(rows, args):
+    # Keep unnamed ponies/characters?
+    if args.known:
+        rows = remove_unknown(rows)
 
+    # Cleanup
+    if args.clean_names:
+        for r in rows:
+            r[0] = clean_name(r[0])
+
+    # Check if we only want the names
+    if args.names:
+        rows = [r[0] for r in rows]
+
+    if args.download == 'csv':
+        filename = scrapekit.DATADIR + args.type + '.' + args.download
+        print('Writing to {}.'.format(filename))
+        scrapekit.write_rows_to_csv(sorted(rows), filename)
+
+    elif args.download == 'txt':
+        filename = scrapekit.DATADIR + args.type + '.' + args.download
+        print('Writing to {}.'.format(filename))
+        with open(filename, 'w') as f:
+            for r in rows:
+                pprint(r, stream=f)
+    return rows
+
+
+def confirm_all():
+    print('Are you sure you want to scrape ALL types? (Might take a while!)')
+    choice = raw_input('[y/n] :> ')
+    if choice.lower().startswith('y'):
+        return True
+    else:
+        exit()
+
+
+def make_parser():
     parser = argparse.ArgumentParser(
         description='List all ponies, or specific categories of characters, from My Little Pony songs from mlp.wikia.com.')
 
@@ -178,45 +200,30 @@ if __name__ == "__main__":
     #  parser.add_argument('-f', '--file', type=str, default='pony_list',
                         #  help="Specify the filename to write to.")
 
+    return parser
+
+if __name__ == "__main__":
+    type_choices = URLS.keys()
+    type_choices.append('all')
+    parser = make_parser()
     args = parser.parse_args()
 
     if args.type == 'all':
-        rows = scrape_everything()
+        if confirm_all():
+            scraping_urls = URLS.values()
     else:
         # Scrape one category
-        print('Scraping {}'.format(args.type))
-        rows = get_rows(URLS[args.type])
+        scraping_urls = [URLS[args.type]]
 
-    original_count = len(rows)
-
-    # Keep unnamed ponies/characters?
-    if args.known:
-        rows = remove_unknown(rows)
-
-    # Cleanup
-    if args.clean_names:
-        for r in rows:
-            r[0] = clean_name(r[0])
-
-    # Check if we only want the names
-    if args.names:
-        rows = [r[0] for r in rows]
-
-    if args.download == 'csv':
-        filename = scrapekit.DATADIR + args.type + '.' + args.download
-        print('Writing to {}.'.format(filename))
-        scrapekit.write_rows_to_csv(sorted(rows), filename)
-
-    elif args.download == 'txt':
-        filename = scrapekit.DATADIR + args.type + '.' + args.download
-        print('Writing to {}.'.format(filename))
-        with open(filename, 'w') as f:
-            for r in rows:
-                pprint(r, stream=f)
+    #  rows = scrape_everything()
+    rows = get_rows(scraping_urls)
 
     if args.images:
         print('Downloading images!')
-        #  images = get_images()
+        #  images = get_images(scraping_urls)
+
+    original_count = len(rows)
+    rows = process_rows(rows=rows, args=args)
 
     # Info and summary section
     if not args.quiet:
