@@ -14,8 +14,7 @@ BEGIN_HTML = """
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <link href="css/bootstrap.min.css" rel="stylesheet">
-    <link href="css/thumbnail-gallery.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
     <title>Look at the ponies!</title>
 </head>
 <body>
@@ -36,8 +35,6 @@ END_HTML = """
         </div>
     </div>
 </footer>
-<script src="js/jquery.js"></script>
-<script src="js/bootstrap.min.js"></script>
 </body>
 </html>
 """
