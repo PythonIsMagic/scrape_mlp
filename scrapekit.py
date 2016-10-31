@@ -170,7 +170,7 @@ def table_to_list(t):
 
 
 def write_rows_to_csv(row_list, filename):
-    csv_file = open(filename, 'a')
+    csv_file = open(filename, 'w')
     writer = csv.writer(csv_file)
 
     try:

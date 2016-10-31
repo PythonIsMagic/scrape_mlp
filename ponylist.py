@@ -71,25 +71,30 @@ def get_rows(urls):
     return rows
 
 
-def table_to_list(t):
+def table_to_list(table):
     """
     Extracts all the rows in a table, excluding the headers.
     """
-    rows = t.findAll("tr")
+    table_rows = table.findAll('tr')
     list_of_rows = []
 
-    for row in rows:
-        table_row = [cell for cell in row.findAll(['th', 'td'])]
+    # Check the top row for a header
+    header = [cell.text.encode('utf-8') for cell in table_rows[0].findAll('th')]
+    list_of_rows.append(header)
 
-        # Get the image url - usually in the last column
-        a = table_row[-1].find('a')
-        if a:
-            img_link = a.attrs.get('href', 'None')
-            table_row[-1] = img_link
+    for row in table_rows:
+        cells = row.findAll('td')
+        if cells:
+            utf8_row = [cell.text.encode('utf-8') for cell in cells[:-1]]
 
-        # Convert to text
-        table_row = [cell.text.encode('utf-8') for cell in row.findAll(['th', 'td'])]
-        list_of_rows.append(table_row)
+            # Get the image url - usually in the last column
+            a = cells[-1].find('a')
+            if a:
+                img_link = a.attrs.get('href', 'None')
+                utf8_row.append(img_link)
+
+            print(utf8_row)
+            list_of_rows.append(utf8_row)
 
     return list_of_rows
 
@@ -218,7 +223,6 @@ if __name__ == "__main__":
 
     # Filework
     if args.images:
-
         if not args.quiet:
             print('Downloading images!')
         images = get_images(rows)
