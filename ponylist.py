@@ -37,37 +37,13 @@ URLS = {
 }
 
 
-def get_images(category_urls):
-    scrapekit.ensure_dir(IMG_DIR)
-
-    imagelinks = []
-    for url in category_urls:
-        soup = scrapekit.handle_url(url)
-        table = soup.find('table', {'class': 'listofponies'})
-        rows = table.findAll('tr')
-
-        # Skip first row
-        for row in rows[1:]:
-            cols = row.findAll('td')
-            if cols:
-                name = cols[0].text.encode('utf-8').strip()
-                # We'll ignore unknown ponies:
-                if 'Unnamed' in name:
-                    continue
-                img = cols[-1].find('a').attrs.get('href', 'None')
-
-                scrapekit.save_image(name, img)
-
-    return imagelinks
-
-
 def strip_label(string):
     """
     Removes any labels that are delimited by a colon.
     ex: "Trainer: Unnamed Unicorn Stallion #7", this removes the "Trainer: " part.
     """
     i = string.find(':')
-    return string[i + 1:]
+    return string[i + 1:].strip()
 
 
 def remove_unknown(rows):
@@ -76,10 +52,12 @@ def remove_unknown(rows):
 
 def clean_name(name):
     """
-    This cleans up any undesireable noise in the scraped name.
+    Cleans up any undesirable noise in the scraped name.
     """
     n = scrapekit.fix_camelcase(name, ':')  # Fix camelCase errors
     n = n.replace('[sic]', '')  # Remove any [sic]'s# Remove any [sic]'s
+    # Clean name of '/'
+    n = n.replace('/', 'or')
     return n.strip()   # Strip any spaces
 
 
@@ -89,8 +67,43 @@ def get_rows(urls):
         print('Scraping {}'.format(url))
         soup = scrapekit.handle_url(url)
         table = soup.find('table', {'class': 'listofponies'})
-        rows.extend(scrapekit.table_to_list(table))
+        rows.extend(table_to_list(table))
     return rows
+
+
+def table_to_list(t):
+    """
+    Extracts all the rows in a table, excluding the headers.
+    """
+    rows = t.findAll("tr")
+    list_of_rows = []
+
+    for row in rows:
+        table_row = [cell for cell in row.findAll(['th', 'td'])]
+
+        # Get the image url - usually in the last column
+        a = table_row[-1].find('a')
+        if a:
+            img_link = a.attrs.get('href', 'None')
+            table_row[-1] = img_link
+
+        # Convert to text
+        table_row = [cell.text.encode('utf-8') for cell in row.findAll(['th', 'td'])]
+        list_of_rows.append(table_row)
+
+    return list_of_rows
+
+
+def get_images(rows):
+    confirm('download images')
+    scrapekit.ensure_dir(IMG_DIR)
+
+    for row in rows:
+        # We'll prepend the pony race/species to the beginning of the image file
+        # So it's easier to sort or display.
+        name = row[1] + ': ' + row[0]
+        img_link = row[-1]
+        scrapekit.save_image(name, img_link)
 
 
 def display_rows(rows):
@@ -104,35 +117,42 @@ def process_rows(rows, args):
     if args.known:
         rows = remove_unknown(rows)
 
-    # Cleanup
-    if args.clean_names:
+    # Cleanup names (think about cleaning other rows in the future -
+    for r in rows:
+        r[0] = clean_name(r[0])
+
+    if args.strip_labels:
         for r in rows:
-            r[0] = clean_name(r[0])
+            r[0] = strip_label(r[0])
 
-    # Check if we only want the names
+    # Check if we only want the names.
     if args.names:
-        rows = [r[0] for r in rows]
+        # note: we have to keep it a list of lists for file processing
+        rows = [[r[0]] for r in rows]
+    return rows
 
+
+def write_file(list_of_rows, args):
     if args.download == 'csv':
         filename = scrapekit.DATADIR + args.type + '.' + args.download
         print('Writing to {}.'.format(filename))
-        scrapekit.write_rows_to_csv(sorted(rows), filename)
+        scrapekit.write_rows_to_csv(list_of_rows, filename)
 
     elif args.download == 'txt':
         filename = scrapekit.DATADIR + args.type + '.' + args.download
         print('Writing to {}.'.format(filename))
         with open(filename, 'w') as f:
-            for r in rows:
+            for r in list_of_rows:
                 pprint(r, stream=f)
-    return rows
 
 
-def confirm_all():
-    print('Are you sure you want to scrape ALL types? (Might take a while!)')
+def confirm(text):
+    print('Are you sure you want to {}? (Might take a while!)'.format(text))
     choice = raw_input('[y/n] :> ')
     if choice.lower().startswith('y'):
         return True
     else:
+        print('Aborting! :O=')
         exit()
 
 
@@ -155,13 +175,11 @@ def make_parser():
 
     parser.add_argument('-d', '--download', type=str, choices=['txt', 'csv'],
                         help='Download the info to file format of your choice.')
-    parser.add_argument('-c', '--clean-names', action='store_true',
-                        help='Clean up names (Fixes camelcase and removes brackets.')
+    parser.add_argument('-s', '--strip-labels', action='store_true',
+                        help='Removes any labels from character names\n(ie: Removes "Bright Pony: " from "Bright Pony: Sunshine Smiles"')
+
     parser.add_argument('-k', '--known', action='store_true',
                         help='Discards any "Unnamed" names from our results.')
-
-    #  parser.add_argument('-f', '--file', type=str, default='pony_list',
-                        #  help="Specify the filename to write to.")
 
     return parser
 
@@ -172,27 +190,22 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.type == 'all':
-        if confirm_all():
+        if confirm("scrape ALL categories"):
             scraping_urls = URLS.values()
     else:
         # Scrape one category
         scraping_urls = [URLS[args.type]]
 
-    #  rows = scrape_everything()
     rows = get_rows(scraping_urls)
-
-    if args.images:
-        print('Downloading images!')
-        #  images = get_images(scraping_urls)
 
     original_count = len(rows)
     rows = process_rows(rows=rows, args=args)
 
     # Info and summary section
-    if not args.quiet:
+    if args.verbose:
         display_rows(rows)
 
-    if args.verbose:
+    if not args.quiet:
         sep = '-'*60
         print('')
         print(sep.center(80))
@@ -202,3 +215,13 @@ if __name__ == "__main__":
         print('Total rows scraped: {}'.format(original_count))
         print('Total rows kept:    {}'.format(len(rows)))
         #  print('Total unique and known names: {}'.format(len(unique_names)))
+
+    # Filework
+    if args.images:
+
+        if not args.quiet:
+            print('Downloading images!')
+        images = get_images(rows)
+
+    if args.download:
+        write_file(rows, args)

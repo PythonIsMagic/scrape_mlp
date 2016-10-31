@@ -169,15 +169,15 @@ def table_to_list(t):
     return list_of_rows
 
 
-def write_rows_to_csv(list_of_rows, filename):
-    csvFile = open(filename, 'a')
-    writer = csv.writer(csvFile)
+def write_rows_to_csv(row_list, filename):
+    csv_file = open(filename, 'a')
+    writer = csv.writer(csv_file)
 
     try:
-        for row in list_of_rows:
+        for row in row_list:
             writer.writerow(row)
     finally:
-        csvFile.close()
+        csv_file.close()
 
 
 def save_image(name, source):
@@ -185,14 +185,12 @@ def save_image(name, source):
     # Image.save should determine the type from the extention
 
     IMGDIR = DATADIR + 'img/'
-    # Clean name of '/'
-    name = name.replace('/', 'or')
     filename = IMGDIR + '_'.join(name.lower().split()) + FORMAT
 
     # Check if we have this img
     if os.path.exists(filename):
         print('Already have pic for {}!'.format(name))
-        pass
+        return False
     else:
         print('Retrieving picture for {}'.format(name))
         time.sleep(2)
@@ -204,9 +202,8 @@ def save_image(name, source):
             i.save(filename)
         except:
             print('{} save failed!'.format(filename))
-            exit()
-
-    return filename
+            return False
+    return True
 
 
 def more_pages(soup, text):
