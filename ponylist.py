@@ -37,43 +37,6 @@ URLS = {
 }
 
 
-def scrapenames(url):
-    """
-    Scrapes the pony names from the wiki page. Returns them in a list.
-    """
-    soup = scrapekit.get_soup(url)
-    tables = soup.findAll('table')
-    rows = tables[1].findAll('tr')
-
-    namelist = []
-    # Get all the text from the first table element in each row
-    for i, r in enumerate(rows):
-        if i == 0:
-            continue  # skip the header row
-        name = r.find('td').text
-        namelist.append(name)
-    return namelist
-
-
-def scrape_all_names():
-    """
-    Scrape all lists in URLS, clean up the names, filter out "unknown" characters, and
-    filter out duplicate entries.
-    """
-    masterlist = []
-    tally = 0
-    for url in URLS.values():
-        names = scrapenames(url)
-        tally += len(names)
-        print('{} names in {}'.format(len(names), url))
-        masterlist.extend(names)
-
-    unique_names = set()
-
-    for n in unique_names:
-        print(n)
-
-
 def get_images(category_urls):
     scrapekit.ensure_dir(IMG_DIR)
 
