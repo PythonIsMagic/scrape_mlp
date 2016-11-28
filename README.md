@@ -1,8 +1,19 @@
 ## scrape_ponies
-This is an exploration of Python's requests and Beautiful Soup modules using the My Little Pony: Friendship is Magic wiki as a playground to test out the various scraping facilities.
+> An exploration of Python's requests and Beautiful Soup modules using the My Little Pony: Friendship is Magic wiki as a playground to test out the various scraping facilities.
+
+The MLP wiki is here: http://mlp.wikia.com/
+
+![](mlp_ponylist_scl.png)
+
+transformed into this...
+
+![](mlp_ponylist_CSV_scl.png)
+
 
 ## Motivation
-I wanted to dive into Beautiful Soup while learning more about Python's handling of HTML. Plus, it's just a side bonus that scraping MLP content is pretty amusing. From the mass amount of songs, transcripts, and character info, I could also start to use some data analysis to get some interesting introspection into the writing and patterns. For example, the character lists show exactly what time a character was introduced. From this we could create a timeline graph showing all the characters and when they first appeared, and overall see how often new characters are introduced!
+I wanted to dive into Beautiful Soup and scrapy while learning more about Python requests and HTML manipulation. Plus, it's just a side bonus that scraping MLP content is pretty amusing. From the mass amount of songs, transcripts, and character info, I could also start to use some data analysis to get some interesting introspection into the writing and patterns. 
+
+For example, the character lists show exactly what time a character was introduced. From this we could create a timeline graph showing all the characters and when they first appeared, and overall see how often new characters are introduced!
 
 ## Examples of use
 ### Scrape a single MLP song
