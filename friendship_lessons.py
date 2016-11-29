@@ -1,9 +1,5 @@
 #!/usr/bin/env python
-import argparse
-import scrapekit
-import textwrap
 """
-    Date: 10/15/16
     All of the MLP "Friendship Lessons" are contained on the page on the below URL.
     The lessons are laid out in <dl> tags, but these are preceded by spans that each have the
     class "mw-headline". So we can use that class as the anchor to scrape by.
@@ -13,16 +9,26 @@ import textwrap
             <span class="mw-headline">
         <dl><dd> text...
 """
+import argparse
+import scrapekit
+import textwrap
+
 URL = 'http://mlp.wikia.com/wiki/Friendship_lessons'
 
-if __name__ == "__main__":
+
+def get_parser():
+    """ Sets up the argument parser. """
     parser = argparse.ArgumentParser(description="Get all friendship lessons from the show.")
-    parser.add_argument('-v', '--verbose', action="store_true",
-                        help="Display more info about processing.")
     parser.add_argument('-d', '--download', action='store_true',
                         help="Download all friendship lessons to text file.")
-    parser.add_argument('-o', '--format', action='store_true',
+    parser.add_argument('-f', '--format', action='store_true',
                         help='Formats the text for better readability.')
+    return parser
+
+
+def main():
+    """ Main entry point. """
+    parser = get_parser()
     args = parser.parse_args()
 
     soup = scrapekit.handle_url(URL)
@@ -49,9 +55,8 @@ if __name__ == "__main__":
                     text += i + '\n'
             lessons[x] = text
 
-    if args.verbose:
-        for i in lessons:
-            print(i)
+    for i in lessons:
+        print(i)
 
     if args.download:
         filename = scrapekit.DATADIR + 'lessons.txt'
@@ -59,3 +64,6 @@ if __name__ == "__main__":
         with open(filename, 'w') as f:
             for i in lessons:
                 f.write(i)
+
+if __name__ == "__main__":
+    main()

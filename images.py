@@ -1,4 +1,3 @@
-import os
 """
 This goes through all the lists of ponys in the wiki lists, and for each pony that has a picture,
 it downloads it (if we don't already have it).
@@ -7,6 +6,7 @@ Then it constructs an HTML page that showcases a table of all the pics with thei
 labels.
 """
 
+import os
 IMG_DIR = 'data/img/'
 
 BEGIN_HTML = """

@@ -1,6 +1,4 @@
-from pprint import pprint
-import argparse
-import scrapekit
+#!/usr/bin/env python
 """
 Scraping the pony lists from mlp.wikia.com
 Each page has a legend table and a table containing a list of all the ponies and their attributes.
@@ -18,6 +16,11 @@ With columns:
     Description and appearance
     Image
 """
+from pprint import pprint
+import argparse
+import scrapekit
+import scrapeimg
+
 IMG_DIR = './data/img/'
 
 # URLSLists of all relevant and official characters in the MLP universe.
@@ -35,15 +38,6 @@ URLS = {
     'prose': 'http://mlp.wikia.com/wiki/List_of_prose_ponies',
     'other': 'http://mlp.wikia.com/wiki/List_of_non-pony_characters',
 }
-
-
-def strip_label(string):
-    """
-    Removes any labels that are delimited by a colon.
-    ex: "Trainer: Unnamed Unicorn Stallion #7", this removes the "Trainer: " part.
-    """
-    i = string.find(':')
-    return string[i + 1:].strip()
 
 
 def remove_unknown(rows):
@@ -108,12 +102,11 @@ def get_images(rows):
         # So it's easier to sort or display.
         name = row[1] + ': ' + row[0]
         img_link = row[-1]
-        scrapekit.save_image(name, img_link)
+        scrapeimg.save_image(name, img_link)
 
 
 def display_rows(rows):
     for r in rows:
-        #  print(r)
         pprint(r)
 
 
@@ -128,7 +121,7 @@ def process_rows(rows, args):
 
     if args.strip_labels:
         for r in rows:
-            r[0] = strip_label(r[0])
+            r[0] = scrapekit.strip_label(r[0])
 
     # Check if we only want the names.
     if args.names:
@@ -162,8 +155,12 @@ def confirm(text):
 
 
 def make_parser():
+    """ Creates the argument parser. """
     parser = argparse.ArgumentParser(
         description='List all ponies, or specific categories of characters, from My Little Pony songs from mlp.wikia.com.')
+
+    type_choices = URLS.keys()
+    type_choices.append('all')
 
     v_group = parser.add_mutually_exclusive_group()
     v_group.add_argument('-v', '--verbose', action='count',
@@ -188,9 +185,9 @@ def make_parser():
 
     return parser
 
-if __name__ == "__main__":
-    type_choices = URLS.keys()
-    type_choices.append('all')
+
+def main():
+    """ Main entry point. """
     parser = make_parser()
     args = parser.parse_args()
 
@@ -225,7 +222,10 @@ if __name__ == "__main__":
     if args.images:
         if not args.quiet:
             print('Downloading images!')
-        images = get_images(rows)
+        get_images(rows)
 
     if args.download:
         write_file(rows, args)
+
+if __name__ == "__main__":
+    main()
