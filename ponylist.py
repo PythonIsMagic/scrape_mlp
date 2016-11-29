@@ -66,9 +66,7 @@ def get_rows(urls):
 
 
 def table_to_list(table):
-    """
-    Extracts all the rows in a table, excluding the headers.
-    """
+    """ Extracts all the rows in a table, excluding the headers. """
     table_rows = table.findAll('tr')
     list_of_rows = []
 
@@ -94,7 +92,7 @@ def table_to_list(table):
 
 
 def get_images(rows):
-    confirm('download images')
+    scrapekit.confirm('download images')
     scrapekit.ensure_dir(IMG_DIR)
 
     for row in rows:
@@ -105,12 +103,8 @@ def get_images(rows):
         scrapeimg.save_image(name, img_link)
 
 
-def display_rows(rows):
-    for r in rows:
-        pprint(r)
-
-
 def process_rows(rows, args):
+    """ Clean up table rows that we extracted. """
     # Keep unnamed ponies/characters?
     if args.known:
         rows = remove_unknown(rows)
@@ -131,27 +125,16 @@ def process_rows(rows, args):
 
 
 def write_file(list_of_rows, args):
+    filename = scrapekit.DATADIR + 'ponylist_' + args.type + '.' + args.download
+    print('Writing to {}.'.format(filename))
+
     if args.download == 'csv':
-        filename = scrapekit.DATADIR + args.type + '.' + args.download
-        print('Writing to {}.'.format(filename))
         scrapekit.write_rows_to_csv(list_of_rows, filename)
 
     elif args.download == 'txt':
-        filename = scrapekit.DATADIR + args.type + '.' + args.download
-        print('Writing to {}.'.format(filename))
         with open(filename, 'w') as f:
             for r in list_of_rows:
                 pprint(r, stream=f)
-
-
-def confirm(text):
-    print('Are you sure you want to {}? (Might take a while!)'.format(text))
-    choice = raw_input('[y/n] :> ')
-    if choice.lower().startswith('y'):
-        return True
-    else:
-        print('Aborting! :O=')
-        exit()
 
 
 def make_parser():
@@ -175,7 +158,7 @@ def make_parser():
     parser.add_argument('-n', '--names', action='store_true',
                         help='Only get the pony names, discard all other columns.')
 
-    parser.add_argument('-d', '--download', type=str, choices=['txt', 'csv'],
+    parser.add_argument('-f', '--format', type=str, choices=['txt', 'csv'],
                         help='Download the info to file format of your choice.')
     parser.add_argument('-s', '--strip-labels', action='store_true',
                         help='Removes any labels from character names\n(ie: Removes "Bright Pony: " from "Bright Pony: Sunshine Smiles"')
@@ -192,7 +175,7 @@ def main():
     args = parser.parse_args()
 
     if args.type == 'all':
-        if confirm("scrape ALL categories"):
+        if scrapekit.confirm("scrape ALL categories"):
             scraping_urls = URLS.values()
     else:
         # Scrape one category
@@ -205,7 +188,8 @@ def main():
 
     # Info and summary section
     if args.verbose:
-        display_rows(rows)
+        for r in rows:
+            pprint(r)
 
     if not args.quiet:
         sep = '-'*60
