@@ -66,12 +66,12 @@ def get_rows(urls):
 
 
 def table_to_list(table):
-    """ Extracts all the rows in a table, excluding the headers. """
+    """ Extracts all the rows in a table and gets the last row as a hyperlink """
     table_rows = table.findAll('tr')
     list_of_rows = []
 
     # Check the top row for a header
-    header = [cell.text.encode('utf-8') for cell in table_rows[0].findAll('th')]
+    header = [cell.text.encode('utf-8').strip() for cell in table_rows[0].findAll('th')]
     list_of_rows.append(header)
 
     for row in table_rows:
@@ -82,10 +82,8 @@ def table_to_list(table):
             # Get the image url - usually in the last column
             a = cells[-1].find('a')
             if a:
-                img_link = a.attrs.get('href', 'None')
-                utf8_row.append(img_link)
-
-            print(utf8_row)
+                link = a.attrs.get('href', 'None')
+                utf8_row.append(link.encode('utf-8'))
             list_of_rows.append(utf8_row)
 
     return list_of_rows
@@ -125,16 +123,25 @@ def process_rows(rows, args):
 
 
 def write_file(list_of_rows, args):
-    filename = scrapekit.DATADIR + 'ponylist_' + args.type + '.' + args.download
+    """ creates a descriptive filename and writes the file to the appropriate file format. """
+    label = 'ponylist'
+    components = [label, args.type]
+    if args.names:
+        components.append('names')
+    if args.strip_labels:
+        components.append('striplabels')
+    if args.known:
+        components.append('known')
+
+    filename = scrapekit.DATADIR + '_'.join(components) + '.' + args.format
+
     print('Writing to {}.'.format(filename))
 
-    if args.download == 'csv':
+    if args.format == 'csv':
         scrapekit.write_rows_to_csv(list_of_rows, filename)
 
-    elif args.download == 'txt':
-        with open(filename, 'w') as f:
-            for r in list_of_rows:
-                pprint(r, stream=f)
+    elif args.format == 'txt':
+        scrapekit.write_rows_to_txt(list_of_rows, filename)
 
 
 def make_parser():
@@ -208,7 +215,7 @@ def main():
             print('Downloading images!')
         get_images(rows)
 
-    if args.download:
+    if args.format:
         write_file(rows, args)
 
 if __name__ == "__main__":
