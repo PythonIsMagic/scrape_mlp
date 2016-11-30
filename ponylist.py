@@ -18,10 +18,10 @@ With columns:
 """
 from pprint import pprint
 import argparse
+import images
 import scrapekit
-import scrapeimg
 
-IMG_DIR = './data/img/'
+DATA_DIR = './data/'
 
 # URLSLists of all relevant and official characters in the MLP universe.
 URLS = {
@@ -88,19 +88,6 @@ def table_to_list(table):
 
     return list_of_rows
 
-
-def get_images(rows):
-    scrapekit.confirm('download images')
-    scrapekit.ensure_dir(IMG_DIR)
-
-    for row in rows:
-        # We'll prepend the pony race/species to the beginning of the image file
-        # So it's easier to sort or display.
-        name = row[1] + ': ' + row[0]
-        img_link = row[-1]
-        scrapeimg.save_image(name, img_link)
-
-
 def process_rows(rows, args):
     """ Clean up table rows that we extracted. """
     # Keep unnamed ponies/characters?
@@ -161,7 +148,7 @@ def make_parser():
     parser.add_argument('type', type=str, choices=type_choices,
                         help='The category of pony to list')
     parser.add_argument('-i', '--images', action='store_true',
-                        help='Download all images found on the lists.')
+                        help='Download all images found on the list(s) and creates a browsable image table in the downloaded image directory. (only download images)')
     parser.add_argument('-n', '--names', action='store_true',
                         help='Only get the pony names, discard all other columns.')
 
@@ -182,7 +169,7 @@ def main():
     args = parser.parse_args()
 
     if args.type == 'all':
-        if scrapekit.confirm("scrape ALL categories"):
+        if scrapekit.confirm('scrape ALL categories'):
             scraping_urls = URLS.values()
     else:
         # Scrape one category
@@ -192,6 +179,15 @@ def main():
 
     original_count = len(rows)
     rows = process_rows(rows=rows, args=args)
+
+    # Filework
+    if args.images:
+        img_dir = DATA_DIR + 'images_' + args.type + '/'
+        images.get_images(rows, img_dir)
+
+        # Create an image sheet
+        images.mk_img_sheet(img_dir)
+        exit()
 
     # Info and summary section
     if args.verbose:
@@ -208,12 +204,6 @@ def main():
         print('Total rows scraped: {}'.format(original_count))
         print('Total rows kept:    {}'.format(len(rows)))
         #  print('Total unique and known names: {}'.format(len(unique_names)))
-
-    # Filework
-    if args.images:
-        if not args.quiet:
-            print('Downloading images!')
-        get_images(rows)
 
     if args.format:
         write_file(rows, args)
